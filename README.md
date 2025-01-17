@@ -5,25 +5,6 @@ Napíšte algoritmus, ktorý bude iterovať celé čísla od 1 do 100 a:
 - ak je číslo deliteľné 15, vypíše "SuperFaktura"
 - ak nesplilo žiadnu z týchto podmienok, vypíše číslo samotné.
 
-Ukážka výstupu:
-1
-2
-Super
-4
-Faktura
-Super
-7
-8
-Super
-Faktura
-11
-Super
-13
-14
-SuperFaktura
-16
-...
-
 * 2. databázová. *
 
 Máte jednoduchú tabuľku s primárnym kľúčom a hodnotou v druhom stĺpci. Niektoré z týchto hodnôt môžu byť duplicitné. Napíšte prosím SQL query, ktorá vráti všetky riadky z tabuľky s duplicitnými hodnotami (*celé* riadky).
@@ -47,19 +28,6 @@ INSERT INTO `duplicates` (`id`, `value`) VALUES
 (9,    6),
 (10,    2);
 
-Želaný výstup:
-
-+----+-------+
-| id | value |
-+----+-------+
-|  2 |     2 |
-|  4 |     2 |
-|  5 |     4 |
-|  6 |     4 |
-|  8 |     6 |
-|  9 |     6 |
-| 10 |     2 |
-+----+-------+
 
 Bude vaše riešenie efektívne fungovať aj na tabuľke s veľkým počtom riadkov (milión a viac)? Vysvetlite prečo a ako.
 
