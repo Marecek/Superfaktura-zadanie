@@ -23,6 +23,9 @@ class SystemFacade
         if ($types === 'use-php-defaults') {
             $types = E_ALL;
         }
+
+        $types = is_int($types) ? $types : 0;
+
         return set_error_handler($handler, $types);
     }
 
@@ -103,7 +106,7 @@ class SystemFacade
     }
 
     /**
-     * @return array|null
+     * @return array<string, int|string>|null
      */
     public function getLastError(): ?array
     {
@@ -113,11 +116,11 @@ class SystemFacade
     /**
      * @param int $httpCode
      *
-     * @return int
+     * @return int|bool
      */
-    public function setHttpResponseCode(int $httpCode): int
+    public function setHttpResponseCode(int $httpCode): int|bool
     {
-        if (!headers_sent()) {
+        if (! headers_sent()) {
             header_remove('location');
         }
 

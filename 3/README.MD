@@ -12,10 +12,11 @@ Skúste prosím kód vyšperkovať úplne najlepšie, ako dokážete (PHP 7.4+, 
 
 ### Riešenie 3 :
 
-#### Lokácia knižnice
+#### Lokácia *knižnice
 ```sh
 'vendor/cobyid',
 ```
+**knižnica skontrolovaná cez phpstan lvl 6*
 
 #### Použitie
 

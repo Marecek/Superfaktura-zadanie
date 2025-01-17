@@ -3,7 +3,6 @@
 namespace CoById\Interface;
 
 use CoById\Exception\ExcError;
-use CoById\Models\Request;
 use CoById\Models\Response;
 
 interface RequestInterface
@@ -14,11 +13,11 @@ interface RequestInterface
     public function getUrl(): string;
 
     /**
-     * @param string $providerUrl
+     * @param string $url
      *
      * @return void
      */
-    public function setUrl(string $providerUrl): void;
+    public function setUrl(string $url): void;
 
     /**
      * @return string
@@ -131,18 +130,18 @@ interface RequestInterface
     public function setConnectionTimeOut(int $connectionTimeout = 10): void;
 
     /**
-     * @return array
+     * @return array<string>
      */
     public function getAllowedRequestMethods(): array;
 
     /**
-     * @return array
+     * @return array<string>
      */
     public function getAllowedResponseFormat(): array;
 
 
     /**
-     * @return array
+     * @return array<string>
      */
     public function getRequestOptionKeys(): array;
 
@@ -159,7 +158,7 @@ interface RequestInterface
     public function setRequestMethod(string $method): void;
 
     /**
-     * @param array $data
+     * @param array<string> $data
      *
      * @return void
      */
@@ -202,28 +201,28 @@ interface RequestInterface
     public function setCode(int $code): void;
 
     /**
-     * @return string
+     * @return float|int
      */
-    public function getLatency(): string;
+    public function getLatency(): float|int;
 
     /**
      * @param int $latency
      *
-     * @return string
+     * @return void
      */
-    public function setLatency(int $latency): string;
+    public function setLatency(int $latency): void;
 
     /**
-     * @return array|null
+     * @return array<string>|null
      */
     public function getErrors(): ?array;
 
     /**
-     * @param array|string|null $errors
+     * @param array<string>|null $errors
      *
      * @return void
      */
-    public function setErrors(array|string|null $errors): void;
+    public function setErrors(array|null $errors): void;
 
     /**
      * @param string $responseData
@@ -233,9 +232,9 @@ interface RequestInterface
     public function verifyResponseData(string $responseData = ''): bool;
 
     /**
-     * @return Response
+     * @return Response|ResponseInterface
      */
-    public function getRequestResponse(): Response;
+    public function getRequestResponse(): Response|ResponseInterface;
 
     /**
      * @return bool

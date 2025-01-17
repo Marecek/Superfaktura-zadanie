@@ -2,8 +2,8 @@
 
 namespace CoById\Models;
 
-use CoById\Interface\ResponseFactoryInterface;
 use CoById\Interface\ResponseInterface;
+use SimpleXMLElement;
 
 class Response implements ResponseInterface
 {
@@ -15,25 +15,22 @@ class Response implements ResponseInterface
         204
     ];
     private bool
-        $error = false;
+        $error;
 
     private int
-        $code = 200;
-    private int
+        $code;
+    private int|float
         $latency = 0;
 
     private string
         $url;
     private string
-        $responseFormat;
-    private string
         $responseData;
     private string
         $responseHeader;
-
-    private ResponseFactoryInterface
-        $responseFactory;
-
+    /**
+     * @var array<string>|null
+     */
     public ?array
         $errors = null;
 
@@ -42,8 +39,8 @@ class Response implements ResponseInterface
      * @param string $responseHeader
      * @param string $responseData
      * @param string $url
-     * @param array|null $errors
-     * @param int|null $latency
+     * @param array<string>|null $errors
+     * @param int|float|null $latency
      */
     public function __construct(
         int $code,
@@ -51,7 +48,7 @@ class Response implements ResponseInterface
         string $responseData,
         string $url,
         ?array $errors,
-        ?int $latency,
+        int|float|null $latency,
     ) {
         $this->code           = $code;
         $this->responseHeader = $responseHeader;
@@ -120,7 +117,12 @@ class Response implements ResponseInterface
         return $this->responseHeader;
     }
 
-    public function setReponseHeader(string $responseHeader): void
+    /**
+     * @param string $responseHeader
+     *
+     * @return void
+     */
+    public function setResponseHeader(string $responseHeader): void
     {
         $this->responseHeader = $responseHeader;
     }
@@ -138,7 +140,7 @@ class Response implements ResponseInterface
      *
      * @return void
      */
-    public function setReponseData(string $responseData): void
+    public function setResponseData(string $responseData): void
     {
         $this->responseData = $responseData;
     }
@@ -162,7 +164,7 @@ class Response implements ResponseInterface
     }
 
     /**
-     * @return array|null
+     * @return array<string>|null
      */
     public function getErrors(): ?array
     {
@@ -170,7 +172,7 @@ class Response implements ResponseInterface
     }
 
     /**
-     * @param array|null $errors
+     * @param array<string>|null $errors
      *
      * @return void
      */
@@ -180,9 +182,9 @@ class Response implements ResponseInterface
     }
 
     /**
-     * @return int
+     * @return int|float
      */
-    public function getLatency(): int
+    public function getLatency(): int|float
     {
         return $this->latency;
     }
@@ -215,11 +217,11 @@ class Response implements ResponseInterface
     }
 
     /**
-     * @return mixed
+     * @return string|false
      */
-    public function toObject(): mixed
+    public function toObject(): string|false
     {
-        return json_decode($this->toJson());
+        return $this->toJson() ? json_decode((string)$this->toJson()) : false;
     }
 
 
@@ -231,7 +233,7 @@ class Response implements ResponseInterface
         $data = $this->toArray();
 
 
-        $xml = new \SimpleXMLElement('<root/>');
+        $xml = new SimpleXMLElement('<root/>');
 
         array_walk_recursive($data, array($xml, 'addChild'));
 
@@ -240,7 +242,7 @@ class Response implements ResponseInterface
 
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     private function prepareResponseData(): array
     {
@@ -251,14 +253,15 @@ class Response implements ResponseInterface
             'latency' => $this->getLatency(),
             'header'  => $this->getResponseHeader(),
             'data'    => [],
-            'errors'    => [],
+            'errors'  => [],
         ];
 
         if ($this->isSuccess()) {
             $response['data'] = json_decode($this->getResponseData(), true);
         } else {
-
-            $response['errors'] = (array) json_decode(json_encode($this->getErrors()), true);
+            if ($this->getErrors()) {
+                $response['errors'] = (array)json_decode((string) json_encode($this->getErrors()), true);
+            }
         }
 
         return $response;

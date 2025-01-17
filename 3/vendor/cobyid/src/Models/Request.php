@@ -8,7 +8,9 @@ use CoById\Factory\ResponseFactory;
 use CoById\Interface\RequestFactoryInterface;
 use CoById\Interface\RequestInterface;
 use CoById\Interface\ResponseFactoryInterface;
+use CoById\Interface\ResponseInterface;
 use CoById\Utilities\Utilities;
+use CurlHandle;
 
 class Request implements RequestInterface
 {
@@ -41,7 +43,7 @@ class Request implements RequestInterface
         $timeout = 15;
     private int
         $code;
-    private int
+    private int|float
         $latency = 0;
 
     private int|string|null
@@ -53,21 +55,15 @@ class Request implements RequestInterface
         $ssl = false;
     private bool
         $json = false;
-    private bool
-        $cached;
-
     private string
         $url;
     private string
         $responseUrl;
     private string
         $requestMethod = 'GET';
-    private string
-        $parameters;
+
     private string
         $responseFormat;
-    private string
-        $root;
     private string
         $auth;
     private string
@@ -82,13 +78,21 @@ class Request implements RequestInterface
     private ?RequestFactoryInterface $requestFactory;
     protected ?ResponseFactoryInterface $responseFactory;
 
+    /**
+     * @var array<string>|null
+     */
     public ?array
         $data = null;
+    /**
+     * @var array<string>|null
+     */
     public ?array
         $errors = [];
 
     /**
-     * @throws Exception
+     * @param string $url
+     * @param RequestFactoryInterface|null $requestFactory
+     * @param ResponseFactoryInterface|null $responseFactory
      */
     public function __construct(
         string $url,
@@ -98,7 +102,6 @@ class Request implements RequestInterface
         $this->url             = $url;
         $this->requestFactory  = $requestFactory ?: new RequestFactory();
         $this->responseFactory = $responseFactory ?: new ResponseFactory();
-        $this->root            = $this->getRootDir();
     }
 
 
@@ -299,7 +302,7 @@ class Request implements RequestInterface
     }
 
     /**
-     * @param array $data
+     * @param array<string> $data
      *
      * @return void
      */
@@ -383,25 +386,25 @@ class Request implements RequestInterface
 
 
     /**
-     * @return string
+     * @return float|int
      */
-    public function getLatency(): string
+    public function getLatency(): float|int
     {
         return $this->latency;
     }
 
     /**
-     * @param int $latency
+     * @param int|float $latency
      *
-     * @return string
+     * @return void
      */
-    public function setLatency(int $latency): string
+    public function setLatency(int|float $latency): void
     {
-        return $this->latency = $latency;
+        $this->latency = $latency;
     }
 
     /**
-     * @return array|null
+     * @return array<string>|null
      */
     public function getErrors(): ?array
     {
@@ -409,11 +412,11 @@ class Request implements RequestInterface
     }
 
     /**
-     * @param array|string|null $errors
+     * @param array<string>|null $errors
      *
      * @return void
      */
-    public function setErrors(array|string|null $errors): void
+    public function setErrors(?array $errors): void
     {
         $this->errors = $errors;
     }
@@ -454,7 +457,7 @@ class Request implements RequestInterface
             $time     = curl_getinfo($curl, CURLINFO_TOTAL_TIME);
             $responseUrl = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
             curl_close($curl);
-            $responseData = substr($response, $headSize);
+            $responseData = substr((string)$response, $headSize);
 
             $responseCode = empty((array) json_decode($responseData)) ? 404 : $responseCode;
 
@@ -472,7 +475,7 @@ class Request implements RequestInterface
             }
             $this->setCode($responseCode);
             $this->setResponseUrl($responseUrl);
-            $this->setResponseHeader(substr($response, 0, $headSize));
+            $this->setResponseHeader(substr((string)$response, 0, $headSize));
             $this->setResponseData($responseData);
             $this->setLatency(round($time * 1000));
         } catch (ExcError $e) {
@@ -490,12 +493,11 @@ class Request implements RequestInterface
 
 
     /**
-     * @return Response
+     * @return Response|ResponseInterface
      */
-    public function getRequestResponse(): Response
+    public function getRequestResponse(): Response|ResponseInterface
     {
-
-        $response = $this->responseFactory->create(
+        return $this->responseFactory->create(
             $this->getCode(),
             $this->getResponseHeader(),
             $this->getResponseData(),
@@ -503,8 +505,6 @@ class Request implements RequestInterface
             $this->getErrors(),
             $this->getLatency()
         );
-
-        return $response;
     }
 
     /**
@@ -526,11 +526,11 @@ class Request implements RequestInterface
     }
 
     /**
-     * @param $curl
+     * @param mixed $curl
      *
      * @return void
      */
-    private function setCUrlRequestOptions($curl): void
+    private function setCUrlRequestOptions(mixed $curl): void
     {
         if (isset($this->auth)) {
             curl_setopt($curl, CURLOPT_USERPWD, $this->auth);
@@ -556,8 +556,60 @@ class Request implements RequestInterface
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, $this->ssl);
         curl_setopt($curl, CURLOPT_USERAGENT, $this->userAgent);
         curl_setopt($curl, CURLOPT_HEADER, true);
-        curl_setopt($curl, CURLOPT_VERBOSE, 1);
+        curl_setopt($curl, CURLOPT_VERBOSE, true);
         curl_setopt($curl, CURLOPT_ENCODING, "UTF-8");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCookiesEnabled(): bool
+    {
+        return $this->cookiesEnabled;
+    }
+
+    /**
+     * @param bool $cookiesEnabled
+     */
+    public function setCookiesEnabled(bool $cookiesEnabled): void
+    {
+        $this->cookiesEnabled = $cookiesEnabled;
+    }
+
+    /**
+     * @param bool $json
+     *
+     * @return Request
+     */
+    public function setJson(bool $json): Request
+    {
+        $this->json = $json;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isJson(): bool
+    {
+        return $this->json;
+    }
+
+    /**
+     * @return RequestFactoryInterface|null
+     */
+    public function getRequestFactory(): ?RequestFactoryInterface
+    {
+        return $this->requestFactory;
+    }
+
+    /**
+     * @param RequestFactoryInterface|null $requestFactory
+     */
+    public function setRequestFactory(?RequestFactoryInterface $requestFactory): void
+    {
+        $this->requestFactory = $requestFactory;
     }
 
 }

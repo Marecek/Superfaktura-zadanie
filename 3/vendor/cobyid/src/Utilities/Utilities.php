@@ -38,11 +38,11 @@ trait Utilities
 
 
     /**
-     * @param $message
+     * @param string $message
      *
-     * @return array
+     * @return array<string, string|null>
      */
-    public function extractDocrefUrl($message): array
+    public function extractDocrefUrl(string $message): array
     {
         $docref = [
             'message' => $message,
@@ -64,11 +64,11 @@ trait Utilities
 
 
     /**
-     * @param $level
+     * @param int $level
      *
      * @return bool
      */
-    public static function isExcLevelFatal($level): bool
+    public static function isExcLevelFatal(int $level): bool
     {
         $errors = E_ERROR;
         $errors |= E_PARSE;
@@ -103,27 +103,33 @@ trait Utilities
      *
      * @return bool
      */
-    public function validateCzCoId(string $id): bool
+    public function validateCzCoId(string|int|null $id): bool
     {
-        $id = preg_replace('#\s+#', '', $id);
+        if ($id) {
+            $id = (string) $id;
+            $id = preg_replace('#\s+#', '', $id);
 
-        if (! preg_match('#^\d{8}$#', $id)) {
-            return false;
-        }
-        $a = 0;
-        for ($i = 0; $i < 7; $i++) {
-            $a += $id[$i] * (8 - $i);
-        }
-        $a = $a % 11;
-        if ($a === 0) {
-            $c = 1;
-        } elseif ($a === 1) {
-            $c = 0;
-        } else {
-            $c = 11 - $a;
+            if (! preg_match('#^\d{8}$#', $id)) {
+                return false;
+            }
+            $a = 0;
+            for ($i = 0; $i < 7; $i++) {
+                $a += (int)$id[$i] *  (int)(8 - $i);
+            }
+            $a = $a % 11;
+            if ($a === 0) {
+                $c = 1;
+            } elseif ($a === 1) {
+                $c = 0;
+            } else {
+                $c = 11 - $a;
+            }
+
+            return (int)$id[7] === $c;
         }
 
-        return (int)$id[7] === $c;
+        return false;
+
     }
 
 

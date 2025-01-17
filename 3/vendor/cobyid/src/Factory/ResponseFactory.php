@@ -13,8 +13,8 @@ class ResponseFactory implements ResponseFactoryInterface
      * @param string $responseHeader
      * @param string $responseData
      * @param string $url
-     * @param array|null $errors
-     * @param int|null $latency
+     * @param array<string>|null $errors
+     * @param int|float|null $latency
      *
      * @return ResponseInterface
      */
@@ -24,7 +24,7 @@ class ResponseFactory implements ResponseFactoryInterface
         string $responseData,
         string $url,
         ?array $errors,
-        ?int $latency,
+        int|float|null $latency,
     ): ResponseInterface {
         return new Response(
             $code,

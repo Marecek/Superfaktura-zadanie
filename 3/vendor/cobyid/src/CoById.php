@@ -4,16 +4,12 @@ namespace CoById;
 
 use CoById\Exception\ExcError;
 use CoById\Factory\RequestFactory;
-use CoById\Handler\BaseBaseHandler;
-use CoById\Handler\Handler;
-use CoById\Interface\BaseHandlerInterface;
 use CoById\Interface\CoByIdInterface;
-use CoById\Interface\ExcInspectorFactoryInterface;
-use CoById\Interface\ExcInspectorInterface;
 use CoById\Interface\RequestFactoryInterface;
 use CoById\Interface\RequestInterface;
+use CoById\Interface\ResponseInterface;
 use CoById\Models\Response;
-use CoById\Request\Request;
+use CoById\Models\Request;
 use CoById\Utilities\SystemFacade;
 use CoById\Utilities\Utilities;
 use Throwable;
@@ -26,7 +22,7 @@ final class CoById implements CoByIdInterface
     private string
         $providerUrl;
     private string
-        $userAgent = 'Keram';
+        $userAgent = 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0';
     private ?int
         $coId = null;
     private SystemFacade
@@ -39,8 +35,7 @@ final class CoById implements CoByIdInterface
         $result = true;
     private bool
         $quit = true;
-    private bool
-        $output = true;
+
 
 
     /**
@@ -92,11 +87,11 @@ final class CoById implements CoByIdInterface
     }
 
     /**
-     * @param string|null $coId
+     * @param string|int|null $coId
      *
      * @return bool
      */
-    public function isCoIdValid(?string $coId): bool
+    public function isCoIdValid(string|int|null $coId): bool
     {
         return null !== $coId && $this->validateCzCoId($coId);
     }
@@ -104,9 +99,9 @@ final class CoById implements CoByIdInterface
     /**
      * @param Request $request
      *
-     * @return Request
+     * @return string
      */
-    public function getRequestMethod(Request $request): Request
+    public function getRequestMethod(Request $request): string
     {
         return $request->getRequestMethod();
     }
@@ -115,12 +110,12 @@ final class CoById implements CoByIdInterface
      * @param Request $request
      * @param string|null $method
      *
-     * @return CoById|Throwable
+     * @return CoById|string
      */
     public function setRequestMethod(
         Request $request,
         ?string $method
-    ): CoById|Throwable {
+    ): CoById|string {
         if ($method && in_array($method, $request->getAllowedRequestMethods())) {
             $request->setRequestMethod($method);
 
@@ -128,9 +123,9 @@ final class CoById implements CoByIdInterface
         }
         $msg = sprintf(
             " %s is invalid method, please provide valid Request method",
-            (string)$method
+            $method
         );
-        $this->throwInvalidArgumentException($msg);
+        return $this->throwInvalidArgumentException($msg);
     }
 
     /**
@@ -148,12 +143,12 @@ final class CoById implements CoByIdInterface
      * @param Request $request
      * @param string|null $responseFormat
      *
-     * @return CoById|Throwable
+     * @return string|CoById
      */
     public function setRequestResponseFormat(
         Request $request,
         ?string $responseFormat,
-    ): CoById|Throwable {
+    ): string|CoById {
         $allowedResponseFormats = $request->getAllowedResponseFormat();
 
         if ($responseFormat && in_array($responseFormat, $allowedResponseFormats)) {
@@ -165,18 +160,18 @@ final class CoById implements CoByIdInterface
             " %s is invalid response format, allowed formats are " . implode(', ', $allowedResponseFormats),
             (string)$responseFormat
         );
-        $this->throwInvalidArgumentException($msg);
+        return $this->throwInvalidArgumentException($msg);
     }
 
     /**
-     * @param int|string $coId
-     * @param string $responseFormat
+     * @param int|string|null $coId
      *
-     * @return string
+     * @return ResponseInterface|Response
+     * @throws ExcError
      */
     public function getCompanyById(
-        int|string $coId
-    ): Response {
+        int|string|null $coId
+    ): ResponseInterface|Response {
         if (! $this->isCoIdValid($coId)) {
             $this->throwInvalidCoIdException($coId);
         }
@@ -192,15 +187,15 @@ final class CoById implements CoByIdInterface
 
     /**
      * @param int|string $coId
-     * @param string|array $data
+     * @param string|array<string> $data
      *
-     * @return Response
+     * @return ResponseInterface|Response
      * @throws ExcError
      */
     public function postCompanyById(
         int|string $coId,
         string|array $data
-    ): Response {
+    ): ResponseInterface|Response {
         if (! $this->isCoIdValid($coId)) {
             $this->throwInvalidCoIdException($coId);
         }
@@ -208,7 +203,10 @@ final class CoById implements CoByIdInterface
         $request = $this->getRequest();
         $request->setRequestMethod('POST');
         $data = is_array($data) ? json_encode($data) : $data;
-        $request->setResponseData($data);
+        if ($data) {
+            $request->setResponseData($data);
+        }
+
         $request->setAppendId($coId);
         $request->setResponseFormat();
         $request->send();
@@ -216,19 +214,6 @@ final class CoById implements CoByIdInterface
         return $request->getRequestResponse();
     }
 
-    /**
-     * @param $send
-     *
-     * @return bool
-     */
-    public function writeToOutput($send = null): bool
-    {
-        if (func_num_args() == 0) {
-            return $this->output;
-        }
-
-        return $this->output = (bool)$send;
-    }
 
     /**
      * @param RequestFactoryInterface $factory
@@ -254,47 +239,11 @@ final class CoById implements CoByIdInterface
         return $this->quit = (bool)$exit;
     }
 
-    /**
-     * @param null $httpCode
-     *
-     * @return int|false
-     */
-    public function httpCode($httpCode = null): int|false
-    {
-        if (func_num_args() == 0) {
-            return $this->httpCode;
-        }
-
-        if (! $httpCode) {
-            return $this->httpCode = false;
-        }
-
-        if ($httpCode === true) {
-            $httpCode = 500;
-        }
-
-        return $this->httpCode = $httpCode;
-    }
 
     /**
-     * @param null $exitCode
-     *
-     * @return int|false
+     * @return RequestInterface
      */
-    public function exitCode($exitCode = null): int|false
-    {
-        if (func_num_args() == 0) {
-            return $this->exitCode;
-        }
-
-        return $this->exitCode = (int)$exitCode;
-    }
-
-
-    /**
-     * @return RequestInterface|Throwable
-     */
-    private function getRequest(): RequestInterface|Throwable
+    private function getRequest(): RequestInterface
     {
         $providerUrl = $this->getProviderUrl();
 
@@ -304,37 +253,37 @@ final class CoById implements CoByIdInterface
     /**
      * @param string $providerUrl
      *
-     * @return Throwable
+     * @return string
      */
-    private function throwInvalidUrlException(string $providerUrl): Throwable
+    private function throwInvalidUrlException(string $providerUrl): string
     {
         $msg = sprintf(
             " %s is invalid provider Url, please provide correct provider url",
             $providerUrl
         );
-        $this->throwInvalidArgumentException($msg);
+        return $this->throwInvalidArgumentException($msg);
     }
 
     /**
-     * @param int|string $coId
+     * @param int|string|null $coId
      *
-     * @return Throwable
+     * @return string
      */
-    private function throwInvalidCoIdException(int|string $coId): Throwable
+    private function throwInvalidCoIdException(int|string|null $coId): string
     {
         $msg = sprintf(
             " %s is invalid Czech company ID ( ICO ) , please provide correct format of company ID",
-            (string)$coId
+            $coId
         );
-        $this->throwInvalidArgumentException($msg);
+        return $this->throwInvalidArgumentException($msg);
     }
 
     /**
      * @param string $msg
      *
-     * @return Throwable
+     * @return string|false
      */
-    private function throwInvalidArgumentException(string $msg): Throwable|string
+    private function throwInvalidArgumentException(string $msg): string|false
     {
 
         $exception =  new InvalidArgumentException($msg);
@@ -342,11 +291,80 @@ final class CoById implements CoByIdInterface
         if (! $this->isAjaxRequest()) {
             throw $exception;
         }
-        echo json_encode(array(
-            'error' => array(
+        return json_encode([
+            'error' => [
                 'msg' => $exception->getMessage(),
                 'code' => $exception->getCode(),
-            ),
-        ));
+            ],
+        ]);
     }
+
+    /**
+     * @param string $userAgent
+     *
+     * @return CoById
+     */
+    public function setUserAgent(string $userAgent): CoById
+    {
+        $this->userAgent = $userAgent;
+
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getCoId(): ?int
+    {
+        return $this->coId;
+    }
+
+    /**
+     * @param int|null $coId
+     */
+    public function setCoId(?int $coId): void
+    {
+        $this->coId = $coId;
+    }
+
+    /**
+     * @return SystemFacade
+     */
+    public function getSystemFacade(): SystemFacade
+    {
+        return $this->systemFacade;
+    }
+
+    /**
+     * @param SystemFacade $systemFacade
+     */
+    public function setSystemFacade(SystemFacade $systemFacade): void
+    {
+        $this->systemFacade = $systemFacade;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUserAgent(): string
+    {
+        return $this->userAgent;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isResult(): bool
+    {
+        return $this->result;
+    }
+
+    /**
+     * @param bool $result
+     */
+    public function setResult(bool $result): void
+    {
+        $this->result = $result;
+    }
+
 }

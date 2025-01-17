@@ -41,11 +41,11 @@ interface ResponseInterface
     public function getResponseHeader(): string;
 
     /**
-     * @param string $responseHader
+     * @param string $responseHeader
      *
      * @return void
      */
-    public function setReponseHeader(string $responseHader): void;
+    public function setResponseHeader(string $responseHeader): void;
 
 
     /**
@@ -58,7 +58,7 @@ interface ResponseInterface
      *
      * @return void
      */
-    public function setReponseData(string $responseData): void;
+    public function setResponseData(string $responseData): void;
 
     /**
      * @return string
@@ -74,23 +74,22 @@ interface ResponseInterface
 
 
     /**
-     * @return array|null
+     * @return array<string>|null
      */
     public function getErrors(): ?array;
 
 
     /**
-     * @param array|null $errors
+     * @param array<string>|null $errors
      *
      * @return void
      */
     public function setErrors(?array $errors): void;
 
     /**
-     * @return int
+     * @return int|float
      */
-    public function getLatency(): int;
-
+    public function getLatency(): int|float;
 
     /**
      * @param int $latency
@@ -100,7 +99,7 @@ interface ResponseInterface
     public function setLatency(int $latency): void;
 
     /**
-     * @return array
+     * @return array<string>
      */
     public function toArray(): array;
 
